@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nika Finance Quiz</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        :root {
+            --dark-bg: #111;
+            --neon-green: #39FF14;
+            --neon-red: #FF3131;
+            --neon-white: #e0e0e0;
+            --text-color: #f0f0f0;
+        }
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* --- Logo Animation Container --- */
+        #animated-logos-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        /* Initial state to hide logos before animation starts */
+        .animated-logo {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            transform: translateY(-100px); /* Start position */
+            opacity: 0;
+            filter: drop-shadow(0 0 5px var(--neon-white)) drop-shadow(0 0 10px var(--neon-white));
+        }
+        
+        /* Animation class to be added via JavaScript */
+        .animated-logo.start-animation {
+            animation: moveSmallLogo var(--animation-duration) linear infinite;
+        }
+
+        .animated-logo img {
+            width: 100%;
+            height: 100%;
+        }
+
+        @keyframes moveSmallLogo {
+            0% { transform: translateY(-100px); opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { transform: translateY(calc(100vh + 100px)); opacity: 0.5; }
+        }
+
+        /* --- Quiz Container --- */
+        .quiz-container {
+            position: relative;
+            background: rgba(25, 25, 25, 0.7);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(57, 255, 20, 0.5);
+            width: 90%;
+            max-width: 700px;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            z-index: 1;
+        }
+        
+        /* --- Central "Quizz" Title --- */
+        #quizz-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8rem;
+            color: var(--neon-white);
+            text-shadow: 0 0 15px var(--neon-white), 0 0 30px var(--neon-white), 0 0 45px var(--neon-white);
+            opacity: 0.2;
+            pointer-events: none;
+            font-weight: bold;
+            z-index: 0;
+            white-space: nowrap;
+        }
+
+        /* --- Other existing styles remain the same --- */
+        .quiz-section {
+            width: 100%;
+            display: none;
+        }
+
+        .quiz-section.active {
+            display: block;
+        }
+
+        .welcome-section {
+            text-align: center;
+        }
+        
+        .welcome-section h1 {
+            color: var(--neon-green);
+            font-size: 2.5em;
+        }
+
+        .welcome-section p {
+            font-size: 1.2em;
+            margin: 20px 0;
+        }
+
+        .username-input {
+            width: 80%;
+            padding: 15px;
+            font-size: 1em;
+            border: 2px solid var(--neon-green);
+            background-color: transparent;
+            color: var(--neon-white);
+            border-radius: 5px;
+            outline: none;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .start-btn {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background-color: var(--neon-green);
+            color: var(--dark-bg);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .start-btn:hover {
+            background-color: #2eff23;
+            box-shadow: 0 0 15px var(--neon-green);
+        }
+
+        .quiz-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(57, 255, 20, 0.3);
+        }
+
+        .quiz-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+            color: var(--neon-green);
+        }
+        
+        .timer-display {
+            font-size: 1.5em;
+            color: var(--neon-green);
+            text-shadow: 0 0 5px var(--neon-green);
+        }
+
+        .question-container {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .question-container h3 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: var(--neon-white);
+        }
+
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .option {
+            background: rgba(57, 255, 20, 0.1);
+            color: var(--text-color);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .option:hover {
+            background: rgba(57, 255, 20, 0.2);
+            border-color: var(--neon-green);
+        }
+        
+        .option.correct {
+            background-color: rgba(57, 255, 20, 0.5);
+            border-color: var(--neon-green);
+            box-shadow: 0 0 15px var(--neon-green);
+            animation: pulse-correct 1s infinite;
+        }
+
+        .option.incorrect {
+            background-color: rgba(255, 49, 49, 0.5);
+            border-color: var(--neon-red);
+            box-shadow: 0 0 15px var(--neon-red);
+        }
+        
+        @keyframes pulse-correct {
+            0% { box-shadow: 0 0 15px var(--neon-green); }
+            50% { box-shadow: 0 0 25px var(--neon-green); }
+            100% { box-shadow: 0 0 15px var(--neon-green); }
+        }
+
+        .results-section {
+            display: none;
+            text-align: center;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .results-section h2 {
+            color: var(--neon-green);
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .results-section p {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--neon-white);
+        }
+
+        .fireworks {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .firework {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--neon-green);
+            border-radius: 50%;
+            opacity: 0;
+            animation: firework-burst 1s ease-out forwards;
+        }
+        
+        @keyframes firework-burst {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="animated-logos-container"></div>
+
+    <div id="quizz-title">Quizz</div>
+
+    <div class="quiz-container">
+
+        <div id="welcome-section" class="quiz-section active">
+            <h1>Welcome to the Nika Finance Quiz</h1>
+            <p>Please enter your username to begin.</p>
+            <input type="text" id="username-input" class="username-input" placeholder="Your Username">
+            <button id="start-btn" class="start-btn">Start Quiz</button>
+        </div>
+
+        <div id="main-quiz-section" class="quiz-section">
+            <div class="quiz-header">
+                <h2 id="quiz-name">Quizz</h2>
+                <div class="timer-display">Time: <span id="timer">25</span>s</div>
+            </div>
+            <div class="question-container">
+                <h3 id="question-text"></h3>
+                <div id="options-container" class="options-container"></div>
+            </div>
+        </div>
+
+        <div id="results-section" class="quiz-section">
+            <h2>Congratulations!</h2>
+            <p id="results-text"></p>
+        </div>
+    </div>
+
+    <div id="fireworks-container" class="fireworks"></div>
+
+    <script>
+        const usernameInput = document.getElementById('username-input');
+        const startBtn = document.getElementById('start-btn');
+        const welcomeSection = document.getElementById('welcome-section');
+        const mainQuizSection = document.getElementById('main-quiz-section');
+        const resultsSection = document.getElementById('results-section');
+        const quizNameElem = document.getElementById('quiz-name');
+        const timerElem = document.getElementById('timer');
+        const questionTextElem = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const resultsTextElem = document.getElementById('results-text');
+        const fireworksContainer = document.getElementById('fireworks-container');
+        const animatedLogosContainer = document.getElementById('animated-logos-container');
+        
+        let username = '';
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timer;
+        let timerValue = 25;
+        
+        let questions = [
+            {
+                q: "What is the main mission of Nika Finance?",
+                options: ["To build a new blockchain from scratch", "To simplify digital asset management and investing", "To create a memecoin with high volatility", "To act as a central bank for crypto"],
+                correct: "To simplify digital asset management and investing"
+            },
+            {
+                q: "What is ETH 10, as per Nika’s announced product?",
+                options: ["A stablecoin pegged to Ethereum", "A token that gives exposure to the top 10 Ethereum-based assets", "A governance token of Nika", "A bridge protocol between ETH and 10 other chains"],
+                correct: "A token that gives exposure to the top 10 Ethereum-based assets"
+            },
+            {
+                q: "Which technology or method does Nika intend to use to optimize returns and manage volatility across its portfolio products?",
+                options: ["Pure random allocation", "Machine learning / AI models", "Manual trading by external fund managers", "Fixed weight index with no rebalancing"],
+                correct: "Machine learning / AI models"
+            },
+            {
+                q: "According to Nika, what is one of the major barriers for average users entering DeFi that they aim to solve?",
+                options: ["Lack of access to high-speed hardware", "Complexity of using wallets, bridging, gas fees, protocol fragmentation", "The inability to mine new blocks", "The scarcity of new tokens for sale"],
+                correct: "Complexity of using wallets, bridging, gas fees, protocol fragmentation"
+            },
+            {
+                q: "What is Nika’s stance on rolling out its own native token (as per current statements)?",
+                options: ["They already have a token and use it for staking", "They have no plans ever to have a token", "They might consider launching a token later as platform grows", "They will airdrop a token immediately on launch"],
+                correct: "They might consider launching a token later as platform grows"
+            },
+            {
+                q: "In Nika’s roadmap, one of their long-term goals is to integrate RWAs. What does “RWA” stand for in this context?",
+                options: ["Real World Assets", "Random Weighted Allocation", "Rapid Wealth Algorithm", "Regulated Web Access"],
+                correct: "Real World Assets"
+            },
+            {
+                q: "Which of the following is not a feature or promise of Nika (based on current materials)?",
+                options: ["Multi-chain execution in the background", "On-chain structured products", "A separate blockchain consensus mechanism", "AI-driven rebalancing and portfolio optimization"],
+                correct: "A separate blockchain consensus mechanism"
+            },
+            {
+                q: "Who is the founder of Nika Finance?",
+                options: ["Vitalik Buterin", "Daniel Brinzan", "Changpeng Zhao", "jeff"],
+                correct: "Daniel Brinzan"
+            },
+            {
+                q: "What is the user interface philosophy Nika aims for (as described in their materials)?",
+                options: ["Ultra technical dashboards meant only for experts", "A “Robinhood-style” intuitive interface hiding complexity", "Command-line only interface", "Only mobile app, no web version"],
+                correct: "A “Robinhood-style” intuitive interface hiding complexity"
+            },
+            {
+                q: "Which of the following is a key differentiator Nika emphasizes to attract users?",
+                options: ["Requiring users to manage each blockchain manually", "Hiding the chain/asset complexity and letting them invest across all assets via one interface", "Only supporting one blockchain (Ethereum)", "No yield, only trading"],
+                correct: "Hiding the chain/asset complexity and letting them invest across all assets via one interface"
+            }
+        ];
+
+        // Shuffles an array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // --- Create multiple animated logos with a delay ---
+        function createAnimatedLogos(count = 15) {
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i >= count) {
+                    clearInterval(interval);
+                    return;
+                }
+                const logoDiv = document.createElement('div');
+                logoDiv.classList.add('animated-logo');
+                
+                const img = document.createElement('img');
+                img.src = "logo.png"; // Make sure you have a 'logo.png' file in the same folder
+                img.alt = "Quiz Logo";
+                logoDiv.appendChild(img);
+
+                logoDiv.style.left = `${Math.random() * 100}vw`;
+                logoDiv.style.setProperty('--animation-duration', `${20 + Math.random() * 10}s`);
+                
+                animatedLogosContainer.appendChild(logoDiv);
+                
+                // This is the key fix: We add the animation class *after* the element is in the DOM
+                setTimeout(() => {
+                    logoDiv.classList.add('start-animation');
+                }, 100);
+                
+                i++;
+            }, 200);
+        }
+        createAnimatedLogos();
+
+        startBtn.addEventListener('click', () => {
+            username = usernameInput.value.trim();
+            if (username.length > 0) {
+                welcomeSection.classList.remove('active');
+                mainQuizSection.classList.add('active');
+                quizNameElem.textContent = username;
+                shuffleArray(questions);
+                loadQuestion();
+            } else {
+                alert('Please enter a username to start the quiz!');
+            }
+        });
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                endQuiz();
+                return;
+            }
+
+            const currentQ = questions[currentQuestionIndex];
+            questionTextElem.textContent = `${currentQuestionIndex + 1}. ${currentQ.q}`;
+            optionsContainer.innerHTML = '';
+            
+            shuffleArray(currentQ.options);
+            
+            currentQ.options.forEach(option => {
+                const optionDiv = document.createElement('div');
+                optionDiv.classList.add('option');
+                optionDiv.textContent = option;
+                optionDiv.addEventListener('click', () => checkAnswer(option, currentQ.correct));
+                optionsContainer.appendChild(optionDiv);
+            });
+            
+            startTimer();
+        }
+
+        function checkAnswer(selectedOption, correctOption) {
+            clearInterval(timer);
+            
+            const options = optionsContainer.querySelectorAll('.option');
+            let isCorrect = selectedOption === correctOption;
+
+            options.forEach(option => {
+                option.style.pointerEvents = 'none';
+                
+                if (option.textContent === correctOption) {
+                    option.classList.add('correct');
+                } else if (option.textContent === selectedOption) {
+                    option.classList.add('incorrect');
+                }
+            });
+
+            if (isCorrect) {
+                score++;
+            }
+            
+            setTimeout(() => {
+                currentQuestionIndex++;
+                loadQuestion();
+            }, 2000);
+        }
+
+        function startTimer() {
+            timerValue = 25;
+            timerElem.textContent = timerValue;
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timerValue--;
+                timerElem.textContent = timerValue;
+                if (timerValue <= 0) {
+                    clearInterval(timer);
+                    currentQuestionIndex++;
+                    loadQuestion();
+                }
+            }, 1000);
+        }
+
+        function endQuiz() {
+            mainQuizSection.classList.remove('active');
+            resultsSection.classList.add('active');
+            resultsTextElem.textContent = `${username} scored ${score} out of ${questions.length}!`;
+            
+            if (score >= questions.length * 0.7) {
+                triggerFireworks();
+            }
+        }
+
+        function triggerFireworks() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    createFirework();
+                }, i * 200);
+            }
+        }
+
+        function createFirework() {
+            const firework = document.createElement('div');
+            firework.classList.add('firework');
+            firework.style.left = `${Math.random() * 100}%`;
+            firework.style.top = `${Math.random() * 100}%`;
+            firework.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            fireworksContainer.appendChild(firework);
+            
+            setTimeout(() => {
+                firework.remove();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
